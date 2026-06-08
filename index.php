@@ -403,13 +403,22 @@ window.saveQuickProduct = async function(){
 window.openAdminModal = function(id=null){
   const a = id ? find(db.admins,id) : {};
   buildModal({ id:'m-admin', title: id?'Edit Admin':'New Admin',
-    body:`<div class="form-group"><label>Full Name *</label><input id="a-name" value="${esc(a.name)}"></div><div class="form-group"><label>Email *</label><input id="a-email" type="email" value="${esc(a.email)}"></div>`,
-    footer:`<button class="btn btn-ghost" onclick="closeModal('m-admin')">Cancel</button><button class="btn btn-primary" onclick="saveAdmin('${id||''}')">Save</button>`
+    body:`<div class="form-group"><label>Full Name *</label><input id="a-name" value="${esc(a.name)}"></div>
+          <div class="form-group"><label>Email *</label><input id="a-email" type="email" value="${esc(a.email)}"></div>
+          <div class="form-group"><label>Phone</label><input id="a-phone" value="${esc(a.phone)}"></div>`,
+    footer:`<button class="btn btn-ghost" onclick="closeModal('m-admin')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveAdmin('${id||''}')">Save</button>`
   });
 };
 window.saveAdmin = async function(id){
-  const n=val('a-name'), e=val('a-email'); if(!n||!e) return alert('Name and email required.');
-  try { if(id) await apiRequest('admin.php','PUT',{id,name:n,email:e}); else await apiRequest('admin.php','POST',{name:n,email:e}); closeModal('m-admin'); await loadAllData(); } catch(err){ alert('Error: '+err.message); }
+  const n=val('a-name'), e=val('a-email'), p=val('a-phone');
+  if(!n||!e) return alert('Name and email required.');
+  try { 
+    if(id) await apiRequest('admin.php','PUT',{id,name:n,email:e,phone:p}); 
+    else await apiRequest('admin.php','POST',{name:n,email:e,phone:p}); 
+    closeModal('m-admin'); 
+    await loadAllData(); 
+  } catch(err){ alert('Error: '+err.message); }
 };
 window.deleteAdmin = async function(id){ if(!confirm('Delete admin?')) return; try { await apiRequest(`admin.php?id=${id}`,'DELETE'); await loadAllData(); } catch(err){ alert('Delete failed: '+err.message); } };
 
@@ -644,10 +653,10 @@ window.showCategoryProducts = function(categoryId){
   for(let prod of productsInCat){
     itemsHtml += `
       <tr>
-        <td><strong>${esc(prod.name)}</strong><br><span class="text-muted" style="font-size:11px">${esc(prod.description || '—')}</span></td>
-        <td class="mono">${fmt$(prod.purchase_price)}</td>
-        <td class="mono">${fmt$(prod.selling_price)}</td>
-        <td class="${prod.stock_quantity<10 ? 'badge badge-red' : 'badge badge-green'}">${prod.stock_quantity} ${prod.unit}</td>
+        <td style="padding:10px 12px; font-weight:500">${esc(prod.name)}</td>
+        <td style="padding:10px 12px" class="mono">${fmt$(prod.purchase_price)}</td>
+        <td style="padding:10px 12px" class="mono">${fmt$(prod.selling_price)}</td>
+        <td style="padding:10px 12px" class="${prod.stock_quantity<10 ? 'badge badge-red' : 'badge badge-green'}" style="white-space:nowrap">${prod.stock_quantity} ${prod.unit}</td>
       </tr>
     `;
   }
@@ -655,11 +664,16 @@ window.showCategoryProducts = function(categoryId){
   buildModal({
     id: 'm-cat-products',
     title: `Products in Category: ${category.name}`,
-    size: '700px',
+    size: '650px',
     body: `
-      <table class="cart-table" style="width:100%">
+      <table style="width:100%; border-collapse:collapse;">
         <thead>
-          <tr><th>Product</th><th>Purchase Price</th><th>Selling Price</th><th>Stock</th></tr>
+          <tr>
+            <th style="padding:10px 12px; text-align:left; background:var(--surface2); border-bottom:1px solid var(--border)">Product</th>
+            <th style="padding:10px 12px; text-align:left; background:var(--surface2); border-bottom:1px solid var(--border)">Purchase Price</th>
+            <th style="padding:10px 12px; text-align:left; background:var(--surface2); border-bottom:1px solid var(--border)">Selling Price</th>
+            <th style="padding:10px 12px; text-align:left; background:var(--surface2); border-bottom:1px solid var(--border)">Stock</th>
+          </tr>
         </thead>
         <tbody>${itemsHtml}</tbody>
       </table>
@@ -681,7 +695,29 @@ dashboard(){
     <div class="stats-grid"><div class="stat-card blue"><div class="label">Products</div><div class="value">${db.products.length}</div></div><div class="stat-card green"><div class="label">Units in Stock</div><div class="value">${totalStock}</div></div><div class="stat-card amber"><div class="label">Stock Value</div><div class="value">${fmt$(stockVal)}</div></div><div class="stat-card"><div class="label">Sales Revenue</div><div class="value" style="color:var(--green)">${fmt$(salesRev)}</div></div></div>
     <div class="grid2"><div><div class="card"><div class="card-header"><h3>Recent Sales</h3><button class="btn btn-ghost btn-sm" onclick="renderPage('sales')">View all</button></div><table><thead><tr><th>Customer</th><th>Admin</th><th>Date</th><th>Total</th></tr></thead><tbody>${!recentSales.length?'<tr class="empty-row"><td colspan="4">No sales yet</td></tr>':recentSales.map(s=>`<tr><td>${custName(s.customer_id)}</td><td class="text-muted">${admName(s.admin_id)}</td><td class="mono">${s.date}</td><td class="mono">${fmt$(s.total)}</td></tr>`).join('')}</tbody></table></div><div class="card" style="margin-top:18px"><div class="card-header"><h3>Recent Purchases</h3><button class="btn btn-ghost btn-sm" onclick="renderPage('purchases')">View all</button></div><table><thead><tr><th>Supplier</th><th>Date</th><th>Total</th></tr></thead><tbody>${!recentPur.length?'<tr class="empty-row"><td colspan="3">No purchases yet</td></tr>':recentPur.map(p=>`<tr><td>${supName(p.supplier_id)}</td><td class="mono">${p.date}</td><td class="mono">${fmt$(p.total)}</td></tr>`).join('')}</tbody></table></div></div><div><div class="card"><div class="card-header"><h3>Low Stock Alert <span style="color:var(--red)">(below 10 units)</span></h3></div><table><thead><tr><th>Product</th><th>Stock</th><th>Unit</th></tr></thead><tbody>${!lowProds.length?'<tr class="empty-row"><td colspan="3">All products sufficiently stocked ✓</td></tr>':lowProds.map(p=>`<tr><td>${p.name}</td><td><span class="badge badge-red">${p.stock_quantity}</span></td><td class="text-muted">${p.unit}</td></tr>`).join('')}</tbody></table></div><div class="card" style="margin-top:18px"><div class="card-header"><h3>Quick Actions</h3></div><div style="padding:16px;display:flex;flex-direction:column;gap:8px"><button class="btn btn-success" onclick="openSaleModal()" style="justify-content:center">🛒 New Sale (POS)</button><button class="btn btn-primary" onclick="openPurchaseModal()" style="justify-content:center">📦 New Purchase Order</button><button class="btn btn-ghost" onclick="renderPage('inventory')" style="justify-content:center">📊 View Inventory Log</button></div></div></div></div>`;
 },
-admins(){ return `<div class="page-header"><h2>Admins</h2><button class="btn btn-primary" onclick="openAdminModal()">+ New Admin</button></div><div class="card"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead><tbody>${!db.admins.length?'<tr class="empty-row"><td colspan="4">No admins</td></tr>':db.admins.map(a=>`<tr><td class="mono text-muted">${a.id}</td><td style="font-weight:500">${a.name}</td><td>${a.email}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openAdminModal('${a.id}')">Edit</button><button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="viewAdminActivity('${a.id}')">📋 View Activity</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteAdmin('${a.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
+admins(){ 
+  return `<div class="page-header"><h2>Admins</h2><button class="btn btn-primary" onclick="openAdminModal()">+ New Admin</button></div>
+    <div class="card">
+      <table class="w-full">
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr>
+        </thead>
+        <tbody>${!db.admins.length?'<tr class="empty-row"><td colspan="5">No admins</td></tr>'
+          :db.admins.map(a=>`<tr>
+            <td class="mono text-muted">${a.id}</td>
+            <td style="font-weight:500">${a.name}</td>
+            <td>${a.email}</td>
+            <td>${a.phone || '—'}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-ghost btn-sm" onclick="openAdminModal('${a.id}')">Edit</button>
+              <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="viewAdminActivity('${a.id}')">View Activity</button>
+              <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteAdmin('${a.id}')">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+},
 customers(){ return `<div class="page-header"><h2>Customers</h2><button class="btn btn-primary" onclick="openCustomerModal()">+ New Customer</button></div><div class="card"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Alt. Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead><tbody>${!db.customers.length?'<tr class="empty-row"><td colspan="7">No customers yet</td></tr>':db.customers.map(c=>`<tr><td class="mono text-muted">${c.id}</td><td style="font-weight:500">${esc(c.name)}</td><td class="mono">${c.phone?esc(c.phone):'—'}</td><td class="mono">${c.phone_opt?esc(c.phone_opt):'—'}</td><td>${c.email?`<a href="mailto:${esc(c.email)}" style="color:var(--accent)">${esc(c.email)}</a>`:'—'}</td><td style="max-width:200px">${c.address?esc(c.address):'—'}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openCustomerModal('${c.id}')">Edit</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteCustomer('${c.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
 suppliers(){ return `<div class="page-header"><h2>Suppliers</h2><button class="btn btn-primary" onclick="openSupplierModal()">+ New Supplier</button></div><div class="card"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Alt. Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead><tbody>${!db.suppliers.length?'<tr class="empty-row"><td colspan="7">No suppliers</td></tr>':db.suppliers.map(s=>`<tr><td class="mono text-muted">${s.id}</td><td style="font-weight:500">${s.name}</td><td class="mono">${s.phone||'—'}</td><td class="mono">${s.phone_opt||'—'}</td><td>${s.email||'—'}</td><td style="max-width:200px">${s.address||'—'}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openSupplierModal('${s.id}')">Edit</button><button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="showSupplierProducts('${s.id}')">📦 View Products</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteSupplier('${s.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
 categories(){ 
@@ -708,9 +744,8 @@ categories(){
 products(){ return `<div class="page-header"><h2>Products</h2></div><div class="card"><table><thead><tr><th>Product ID</th><th>Name</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Qty</th><th>Actions</th></tr></thead><tbody>${!db.products.length?'<tr class="empty-row"><td colspan="8">No products</td></tr>':db.products.map(p=>`<tr><td><span class="badge badge-blue mono">${p.id}</span></td><td><div style="font-weight:500">${p.name}</div><div class="text-muted" style="font-size:11.5px">${p.description||''}</div></td><td><span class="badge badge-blue">${catName(p.category_id)}</span></td><td class="text-muted">${p.unit}</td><td class="mono">${fmt$(p.purchase_price)}</td><td class="mono">${fmt$(p.selling_price)}</td><td>${p.stock_quantity<10?`<span class="badge badge-red">${p.stock_quantity} ⚠</span>`:`<span class="badge badge-green">${p.stock_quantity}</span>`}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openProductModal('${p.id}')">Edit</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
 sup_products(){ 
   return `<div class="page-header"><h2>Supplier–Product Links</h2><button class="btn btn-primary" onclick="openSupProdModal()">+ Link Supplier to Product</button></div>
-    <p class="text-muted" style="margin-bottom:14px">Maps supplier to product with cost price. Auto-fills in Purchase Orders.</p>
     <div class="card" style="overflow-x:auto">
-      <table style="min-width:800px; font-size:12px; width:100%">
+      <table style="min-width:700px; font-size:12px; width:100%">
         <thead>
           <tr>
             <th style="padding:8px 10px">Supplier ID</th>
@@ -719,13 +754,12 @@ sup_products(){
             <th style="padding:8px 10px">Product</th>
             <th style="padding:8px 10px">Category</th>
             <th style="padding:8px 10px">Cost Price</th>
-            <th style="padding:8px 10px">Product Purchase Price</th>
             <th style="padding:8px 10px">Actions</th>
           </tr>
         </thead>
         <tbody>
           ${!db.supplier_products.length ?
-            '<tr class="empty-row"><td colspan="8">No links yet</td></tr>' :
+            '<tr class="empty-row"><td colspan="7">No links yet</td></tr>' :
             db.supplier_products.map(sp => {
               const p = find(db.products, sp.product_id);
               return `
@@ -736,12 +770,11 @@ sup_products(){
                   <td style="padding:8px 10px">${prodName(sp.product_id)}</td>
                   <td style="padding:8px 10px">${p ? `<span class="badge badge-blue">${catName(p.category_id)}</span>` : '—'}</td>
                   <td style="padding:8px 10px" class="mono">${fmt$(sp.cost_price)}</td>
-                  <td style="padding:8px 10px" class="mono text-muted">${p ? fmt$(p.purchase_price) : '—'}</td>
                   <td style="padding:8px 10px; white-space:nowrap">
                     <button class="btn btn-ghost btn-sm" onclick="openSupProdModal('${sp.supplier_id}','${sp.product_id}')">Edit</button>
                     <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteSupProd('${sp.supplier_id}','${sp.product_id}')">Remove</button>
                   </td>
-                </tr>
+                </table>
               `;
             }).join('')
           }
@@ -751,7 +784,7 @@ sup_products(){
 },
 purchases(){ return `<div class="page-header"><h2>Purchase Orders</h2><button class="btn btn-success" onclick="openPurchaseModal()">+ New Purchase</button></div><div class="card"><table><thead><tr><th>ID</th><th>Supplier</th><th>Admin</th><th>Date</th><th>Subtotal</th><th>Discount</th><th>Shipping</th><th>VAT</th><th>Total</th><th>Items</th></tr></thead><tbody>${!db.purchases.length?'<tr class="empty-row"><td colspan="10">No purchases yet</td></tr>':[...db.purchases].reverse().map(p=>`<tr><td class="mono text-muted">${p.id}</td><td>${supName(p.supplier_id)}</td><td class="text-muted">${admName(p.admin_id)}</td><td class="mono">${p.date}</td><td class="mono">${fmt$(p.subtotal)}</td><td class="text-muted">${p.discount_type==='percent'?p.discount_amount+'%':fmt$(p.discount_amount)}</td><td class="mono">${fmt$(p.shipping_charge)}</td><td class="text-muted">${p.vat}%</td><td><span class="badge badge-amber">${fmt$(p.total)}</span></td><td><button class="btn-link" onclick="viewPurchaseItems('${p.id}')">View</button></td></tr>`).join('')}</tbody></table></div>`; },
 sales(){ return `<div class="page-header"><h2>Sales</h2><button class="btn btn-success" onclick="openSaleModal()">+ New Sale (POS)</button></div><div class="card"><table><thead><tr><th>ID</th><th>Customer</th><th>Admin</th><th>Date</th><th>Subtotal</th><th>Discount</th><th>VAT</th><th>Total</th><th>Items</th></tr></thead><tbody>${!db.sales.length?'<tr class="empty-row"><td colspan="9">No sales yet</td></tr>':[...db.sales].reverse().map(s=>`<tr><td class="mono text-muted">${s.id}</td><td>${custName(s.customer_id)}</td><td class="text-muted">${admName(s.admin_id)}</td><td class="mono">${s.date}</td><td class="mono">${fmt$(s.subtotal)}</td><td class="text-muted">${s.discount_type==='percent'?s.discount_amount+'%':fmt$(s.discount_amount)}</td><td class="text-muted">${s.vat}%</td><td><span class="badge badge-green">${fmt$(s.total)}</span></td><td><button class="btn-link" onclick="viewSaleItems('${s.id}')">View</button></td></tr>`).join('')}</tbody></table></div>`; },
-inventory(){ const logs=[...db.inventory].reverse().slice(0,50); return `<div class="page-header"><h2>Inventory Log</h2><span class="text-muted">Log-only · current stock stored in Product.stock_quantity</span></div><div class="card" style="margin-bottom:22px"><div class="card-header"><h3>Current Stock Levels (from Product table)</h3></div><table><thead><tr><th>Product</th><th>Description</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Quantity</th></tr></thead><tbody>${db.products.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td class="text-muted" style="font-size:12px">${p.description||'—'}</td><td><span class="badge badge-blue">${catName(p.category_id)}</span></td><td class="text-muted">${p.unit}</td><td class="mono">${fmt$(p.purchase_price)}</td><td class="mono">${fmt$(p.selling_price)}</td><td>${p.stock_quantity<10?`<span class="badge badge-red">${p.stock_quantity} ⚠</span>`:`<span class="badge badge-green">${p.stock_quantity}</span>`}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="card-header"><h3>Movement Log (Inventory table — last 50 entries)</h3></div><table><thead><tr><th>Log ID</th><th>Product</th><th>Quantity In</th><th>Quantity Out</th><th>Last Updated</th></tr></thead><tbody>${!logs.length?'<tr class="empty-row"><td colspan="5">No log entries yet</td></tr>':logs.map(l=>`<tr><td class="mono text-muted">${l.id}</td><td>${prodName(l.product_id)}</td><td>${l.quantity_in>0?`<span class="badge badge-green">+${l.quantity_in}</span>`:'—'}</td><td>${l.quantity_out>0?`<span class="badge badge-red">−${l.quantity_out}</span>`:'—'}</td><td class="mono">${l.last_updated}</td></tr>`).join('')}</tbody></table></div>`; }
+inventory(){ const logs=[...db.inventory].reverse().slice(0,50); return `<div class="page-header"><h2>Inventory Log</h2></div><div class="card" style="margin-bottom:22px"><div class="card-header"><h3>Current Stock Levels (from Product table)</h3></div><table><thead><tr><th>Product</th><th>Description</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Quantity</th></tr></thead><tbody>${db.products.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td class="text-muted" style="font-size:12px">${p.description||'—'}</td><td><span class="badge badge-blue">${catName(p.category_id)}</span></td><td class="text-muted">${p.unit}</td><td class="mono">${fmt$(p.purchase_price)}</td><td class="mono">${fmt$(p.selling_price)}</td><td>${p.stock_quantity<10?`<span class="badge badge-red">${p.stock_quantity} ⚠</span>`:`<span class="badge badge-green">${p.stock_quantity}</span>`}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="card-header"><h3>Movement Log (Inventory table — last 50 entries)</h3></div><table><thead><tr><th>Log ID</th><th>Product</th><th>Quantity In</th><th>Quantity Out</th><th>Last Updated</th></tr></thead><tbody>${!logs.length?'<tr class="empty-row"><td colspan="5">No log entries yet</td></tr>':logs.map(l=>`<tr><td class="mono text-muted">${l.id}</td><td>${prodName(l.product_id)}</td><td>${l.quantity_in>0?`<span class="badge badge-green">+${l.quantity_in}</span>`:'—'}</td><td>${l.quantity_out>0?`<span class="badge badge-red">−${l.quantity_out}</span>`:'—'}</td><td class="mono">${l.last_updated}</td></tr>`).join('')}</tbody></table></div>`; }
 };
 
 function renderPage(page){ activePage = page; const pc = document.getElementById('pageContent'); pc.innerHTML = (pages[page] || pages.dashboard)(); document.querySelectorAll('.nav-link').forEach(l => { l.classList.toggle('active', l.dataset.page === page); }); }
