@@ -18,13 +18,14 @@ if ($method === 'POST') {
     $b = body();
     $name  = trim($b['name']  ?? '');
     $email = trim($b['email'] ?? '');
+    $phone = trim($b['phone'] ?? '');
     if (!$name || !$email) json(['error' => 'Name and email are required.'], 400);
 
     $id = nextId('ADM');
-    $stmt = $db->prepare("INSERT INTO admin VALUES (?,?,?)");
-    $stmt->bind_param('sss', $id, $name, $email);
+    $stmt = $db->prepare("INSERT INTO admin VALUES (?,?,?,?)");
+    $stmt->bind_param('ssss', $id, $name, $email, $phone);
     $stmt->execute();
-    json(['id' => $id, 'name' => $name, 'email' => $email], 201);
+    json(['id' => $id, 'name' => $name, 'email' => $email, 'phone' => $phone], 201);
 }
 
 // PUT — update
@@ -33,10 +34,11 @@ if ($method === 'PUT') {
     $id    = trim($b['id']    ?? '');
     $name  = trim($b['name']  ?? '');
     $email = trim($b['email'] ?? '');
+    $phone = trim($b['phone'] ?? '');
     if (!$id || !$name || !$email) json(['error' => 'id, name and email are required.'], 400);
 
-    $stmt = $db->prepare("UPDATE admin SET name=?, email=? WHERE id=?");
-    $stmt->bind_param('sss', $name, $email, $id);
+    $stmt = $db->prepare("UPDATE admin SET name=?, email=?, phone=? WHERE id=?");
+    $stmt->bind_param('ssss', $name, $email, $phone, $id);
     $stmt->execute();
     json(['success' => true]);
 }
