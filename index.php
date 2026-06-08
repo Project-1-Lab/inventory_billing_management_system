@@ -762,19 +762,23 @@ sup_products(){
             '<tr class="empty-row"><td colspan="7">No links yet</td></tr>' :
             db.supplier_products.map(sp => {
               const p = find(db.products, sp.product_id);
+              // Always display a row – if product missing, show placeholders
+              const productName = p ? p.name : `<span class="text-muted">(deleted)</span>`;
+              const categoryName = p ? catName(p.category_id) : '<span class="text-muted">—</span>';
+              const productIdDisplay = sp.product_id;
               return `
                 <tr>
                   <td style="padding:8px 10px"><span class="badge badge-amber mono">${sp.supplier_id}</span></td>
                   <td style="padding:8px 10px; font-weight:500">${supName(sp.supplier_id)}</td>
-                  <td style="padding:8px 10px"><span class="badge badge-blue mono">${sp.product_id}</span></td>
-                  <td style="padding:8px 10px">${prodName(sp.product_id)}</td>
-                  <td style="padding:8px 10px">${p ? `<span class="badge badge-blue">${catName(p.category_id)}</span>` : '—'}</td>
+                  <td style="padding:8px 10px"><span class="badge badge-blue mono">${productIdDisplay}</span></td>
+                  <td style="padding:8px 10px">${productName}</td>
+                  <td style="padding:8px 10px">${categoryName}</td>
                   <td style="padding:8px 10px" class="mono">${fmt$(sp.cost_price)}</td>
                   <td style="padding:8px 10px; white-space:nowrap">
                     <button class="btn btn-ghost btn-sm" onclick="openSupProdModal('${sp.supplier_id}','${sp.product_id}')">Edit</button>
                     <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteSupProd('${sp.supplier_id}','${sp.product_id}')">Remove</button>
                   </td>
-                </table>
+                </tr>
               `;
             }).join('')
           }
