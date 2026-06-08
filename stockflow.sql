@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 06, 2026 at 06:35 PM
+-- Generation Time: Jun 08, 2026 at 07:50 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -30,16 +30,17 @@ SET time_zone = "+00:00";
 CREATE TABLE `admin` (
   `id` varchar(20) NOT NULL,
   `name` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL
+  `email` varchar(100) NOT NULL,
+  `phone` varchar(20) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `admin`
 --
 
-INSERT INTO `admin` (`id`, `name`, `email`) VALUES
-('ADM10', 'Sami', 'fghj@gmail.com'),
-('ADM9', 'Tanvir', 'ghj@gmail.com');
+INSERT INTO `admin` (`id`, `name`, `email`, `phone`) VALUES
+('ADM10', 'Sami', 'fghj@gmail.com', ''),
+('ADM9', 'Tanvir', 'ghj@gmail.com', '');
 
 -- --------------------------------------------------------
 
@@ -103,10 +104,10 @@ INSERT INTO `id_sequence` (`prefix`, `nextval`) VALUES
 ('C', 7),
 ('CAT', 11),
 ('INV', 1),
-('P', 18),
-('PUR', 12),
-('SALE', 10),
-('SUP', 14);
+('P', 19),
+('PUR', 14),
+('SALE', 11),
+('SUP', 15);
 
 -- --------------------------------------------------------
 
@@ -129,7 +130,10 @@ CREATE TABLE `inventory` (
 INSERT INTO `inventory` (`id`, `product_id`, `quantity_in`, `quantity_out`, `last_updated`) VALUES
 (18, 'P17', 10, 0, '2026-06-06'),
 (19, 'P17', 0, 2, '2026-06-06'),
-(20, 'P18', 20, 0, '2026-06-06');
+(20, 'P18', 20, 0, '2026-06-06'),
+(21, 'P18', 0, 2, '2026-06-06'),
+(22, 'P17', 10, 0, '2026-06-06'),
+(23, 'P19', 10, 0, '2026-06-08');
 
 -- --------------------------------------------------------
 
@@ -153,8 +157,9 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`id`, `name`, `description`, `category_id`, `unit`, `purchase_price`, `selling_price`, `stock_quantity`) VALUES
-('P17', 'Mouse', '', 'CAT10', '0', 10.00, 15.00, 8),
-('P18', 'Oil', 'Good quality oil', 'CAT11', 'pcs', 12.00, 14.00, 20);
+('P17', 'Mouse', '', 'CAT10', 'pcs', 10.00, 15.00, 18),
+('P18', 'Oil', 'Good quality oil', 'CAT11', 'pcs', 12.00, 14.00, 18),
+('P19', 'Mobile', '', 'CAT10', 'pcs', 100.00, 120.00, 10);
 
 -- --------------------------------------------------------
 
@@ -181,7 +186,9 @@ CREATE TABLE `purchase` (
 
 INSERT INTO `purchase` (`id`, `supplier_id`, `admin_id`, `date`, `subtotal`, `discount_type`, `discount_amount`, `shipping_charge`, `vat`, `total`) VALUES
 ('PUR11', 'SUP13', 'ADM10', '2026-06-06', 100.00, 'fixed', 0.00, 0.00, 0.00, 100.00),
-('PUR12', 'SUP14', 'ADM10', '2026-06-06', 240.00, 'fixed', 0.00, 0.00, 0.00, 240.00);
+('PUR12', 'SUP14', 'ADM10', '2026-06-06', 240.00, 'fixed', 0.00, 0.00, 0.00, 240.00),
+('PUR13', 'SUP13', 'ADM10', '2026-06-06', 100.00, 'fixed', 0.00, 0.00, 0.00, 100.00),
+('PUR14', 'SUP15', 'ADM10', '2026-06-08', 1000.00, 'fixed', 0.00, 0.00, 0.00, 1000.00);
 
 -- --------------------------------------------------------
 
@@ -205,7 +212,9 @@ CREATE TABLE `purchase_item` (
 
 INSERT INTO `purchase_item` (`id`, `purchase_id`, `product_id`, `quantity`, `unit`, `price`, `total`) VALUES
 (10, 'PUR11', 'P17', 10, 'pcs', 10.00, 100.00),
-(11, 'PUR12', 'P18', 20, 'pcs', 12.00, 240.00);
+(11, 'PUR12', 'P18', 20, 'pcs', 12.00, 240.00),
+(12, 'PUR13', 'P17', 10, '0', 10.00, 100.00),
+(13, 'PUR14', 'P19', 10, 'pcs', 100.00, 1000.00);
 
 -- --------------------------------------------------------
 
@@ -230,7 +239,8 @@ CREATE TABLE `sale` (
 --
 
 INSERT INTO `sale` (`id`, `customer_id`, `admin_id`, `date`, `subtotal`, `discount_type`, `discount_amount`, `vat`, `total`) VALUES
-('SALE10', 'C7', 'ADM10', '2026-06-06', 30.00, 'fixed', 0.00, 0.00, 30.00);
+('SALE10', 'C7', 'ADM10', '2026-06-06', 30.00, 'fixed', 0.00, 0.00, 30.00),
+('SALE11', 'C7', 'ADM10', '2026-06-06', 28.00, 'fixed', 0.00, 0.00, 28.00);
 
 -- --------------------------------------------------------
 
@@ -252,7 +262,8 @@ CREATE TABLE `sale_item` (
 --
 
 INSERT INTO `sale_item` (`id`, `sale_id`, `product_id`, `quantity`, `price`, `total`) VALUES
-(9, 'SALE10', 'P17', 2, 15.00, 30.00);
+(9, 'SALE10', 'P17', 2, 15.00, 30.00),
+(10, 'SALE11', 'P18', 2, 14.00, 28.00);
 
 -- --------------------------------------------------------
 
@@ -275,7 +286,8 @@ CREATE TABLE `supplier` (
 
 INSERT INTO `supplier` (`id`, `name`, `phone`, `phone_opt`, `email`, `address`) VALUES
 ('SUP13', 'Modern Electronics', '45678', '', 'fghjk@gmail.com', 'Sylhet'),
-('SUP14', 'Tanim Grocery', '746532', '', 'iuyf@gmail.com', 'Sylhet');
+('SUP14', 'Tanim Grocery', '746532', '', 'iuyf@gmail.com', 'Sylhet'),
+('SUP15', 'Rahi mobiles', '34345', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -295,7 +307,7 @@ CREATE TABLE `supplier_product` (
 
 INSERT INTO `supplier_product` (`supplier_id`, `product_id`, `cost_price`) VALUES
 ('SUP13', 'P17', 10.00),
-('SUP14', 'P18', 10.00);
+('SUP15', 'P19', 100.00);
 
 --
 -- Indexes for dumped tables
@@ -393,19 +405,19 @@ ALTER TABLE `supplier_product`
 -- AUTO_INCREMENT for table `inventory`
 --
 ALTER TABLE `inventory`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `purchase_item`
 --
 ALTER TABLE `purchase_item`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `sale_item`
 --
 ALTER TABLE `sale_item`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Constraints for dumped tables
