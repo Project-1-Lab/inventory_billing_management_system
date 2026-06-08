@@ -51,13 +51,13 @@ if ($method === 'DELETE') {
     if (!$id) json(['error' => 'id required'], 400);
     
     try {
-        $stmt = $db->prepare("DELETE FROM admin WHERE id=?");
+        $stmt = $db->prepare("DELETE FROM customer WHERE id=?");   // ✅ fixed table name
         $stmt->bind_param('s', $id);
         $stmt->execute();
         json(['success' => true]);
     } catch (mysqli_sql_exception $e) {
         if (strpos($e->getMessage(), 'foreign key constraint fails') !== false) {
-            json(['error' => 'Cannot delete this record because it is linked to sales or other transactions. Delete those first.'], 400);
+            json(['error' => 'Cannot delete this customer because they have linked sales records. Delete those first.'], 400);
         } else {
             json(['error' => $e->getMessage()], 500);
         }
