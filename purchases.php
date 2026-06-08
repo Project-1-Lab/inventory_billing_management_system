@@ -69,27 +69,33 @@ if ($method === 'POST') {
         $stmt->bind_param('ssssdsdddd', $pid, $supplier_id, $admin_id, $date, $subtotal, $discount_type, $discount_amount, $shipping_charge, $vat, $total);
         $stmt->execute();
 
-        foreach ($items as $it) {
-            $prod_id  = trim($it['product_id'] ?? '');
-            $qty      = (int)($it['quantity']  ?? 0);
-            $price    = (float)($it['price']   ?? 0);
-            $line     = (float)($it['total']   ?? $qty * $price);
-            $unit     = trim($it['unit']       ?? 'pcs');
+      foreach ($items as $it) {
+    $prod_id  = trim($it['product_id'] ?? '');
+    $qty      = (int)($it['quantity']  ?? 0);
+    $price    = (float)($it['price']   ?? 0);
+    $line     = (float)($it['total']   ?? $qty * $price);
+    $unit     = trim($it['unit']       ?? 'pcs');
 
-            $stmt2 = $db->prepare("INSERT INTO purchase_item (purchase_id,product_id,quantity,unit,price,total) VALUES (?,?,?,?,?,?)");
-            $stmt2->bind_param('ssissd', $pid, $prod_id, $qty, $unit, $price, $line);
-            $stmt2->execute();
+    // insert purchase_item
+    $stmt2 = $db->prepare("INSERT INTO purchase_item (purchase_id,product_id,quantity,unit,price,total) VALUES (?,?,?,?,?,?)");
+    $stmt2->bind_param('ssissd', $pid, $prod_id, $qty, $unit, $price, $line);
+    $stmt2->execute();
 
-            // update stock + purchase_price
-            $stmt3 = $db->prepare("UPDATE product SET stock_quantity = stock_quantity + ?, purchase_price=? WHERE id=?");
-            $stmt3->bind_param('ids', $qty, $price, $prod_id);
-            $stmt3->execute();
+    // update stock + purchase_price
+    $stmt3 = $db->prepare("UPDATE product SET stock_quantity = stock_quantity + ?, purchase_price = ? WHERE id = ?");
+    $stmt3->bind_param('ids', $qty, $price, $prod_id);
+    $stmt3->execute();
 
-            // inventory log
-            $stmt4 = $db->prepare("INSERT INTO inventory (product_id,quantity_in,quantity_out,last_updated) VALUES (?,?,0,?)");
-            $stmt4->bind_param('sis', $prod_id, $qty, $date);
-            $stmt4->execute();
-        }
+    // ✅ NEW: update product unit
+    $stmtUnit = $db->prepare("UPDATE product SET unit = ? WHERE id = ?");
+    $stmtUnit->bind_param('ss', $unit, $prod_id);
+    $stmtUnit->execute();
+
+    // inventory log
+    $stmt4 = $db->prepare("INSERT INTO inventory (product_id,quantity_in,quantity_out,last_updated) VALUES (?,?,0,?)");
+    $stmt4->bind_param('sis', $prod_id, $qty, $date);
+    $stmt4->execute();
+}
 
         $db->commit();
         json(['id' => $pid, 'success' => true], 201);
