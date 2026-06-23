@@ -603,36 +603,35 @@ window.showSupplierProducts = function(supplierId){
         <tr>
           <td><strong>${esc(prod.name)}</strong><br><span class="text-muted" style="font-size:11px">${esc(prod.description || '—')}</span></td>
           <td class="mono">${fmt$(sp.cost_price)}</td>
-          <td class="mono">${fmt$(prod.purchase_price)}</td>
           <td><span class="badge badge-blue">${catName(prod.category_id)}</span></td>
           <td>${prod.unit}</td>
         </tr>
       `;
     } else {
-      itemsHtml += `<tr><td colspan="5" class="text-muted">Product not found (ID: ${esc(sp.product_id)})</td></tr>`;
+      itemsHtml += `
+        <tr>
+          <td colspan="4" class="text-muted">Product not found (ID: ${esc(sp.product_id)})</td>
+        </tr>
+      `;
     }
   }
   
   buildModal({
     id: 'm-supplier-prods',
     title: `Products supplied by ${supplier.name}`,
-    size: '800px',
+    size: '700px',
     body: `
       <table class="cart-table" style="width:100%">
         <thead>
           <tr>
             <th>Product & Description</th>
             <th>Supplier Cost Price</th>
-            <th>Our Purchase Price</th>
             <th>Category</th>
             <th>Unit</th>
           </tr>
         </thead>
         <tbody>${itemsHtml}</tbody>
       </table>
-      <div class="text-muted" style="margin-top:12px; font-size:12px">
-        💡 These cost prices are auto-filled when creating a new Purchase Order with this supplier.
-      </div>
     `,
     footer: `<button class="btn btn-primary" onclick="closeModal('m-supplier-prods')">Close</button>`
   });
@@ -719,7 +718,43 @@ admins(){
     </div>`;
 },
 customers(){ return `<div class="page-header"><h2>Customers</h2><button class="btn btn-primary" onclick="openCustomerModal()">+ New Customer</button></div><div class="card"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Alt. Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead><tbody>${!db.customers.length?'<tr class="empty-row"><td colspan="7">No customers yet</td></tr>':db.customers.map(c=>`<tr><td class="mono text-muted">${c.id}</td><td style="font-weight:500">${esc(c.name)}</td><td class="mono">${c.phone?esc(c.phone):'—'}</td><td class="mono">${c.phone_opt?esc(c.phone_opt):'—'}</td><td>${c.email?`<a href="mailto:${esc(c.email)}" style="color:var(--accent)">${esc(c.email)}</a>`:'—'}</td><td style="max-width:200px">${c.address?esc(c.address):'—'}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openCustomerModal('${c.id}')">Edit</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteCustomer('${c.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
-suppliers(){ return `<div class="page-header"><h2>Suppliers</h2><button class="btn btn-primary" onclick="openSupplierModal()">+ New Supplier</button></div><div class="card"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Alt. Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead><tbody>${!db.suppliers.length?'<tr class="empty-row"><td colspan="7">No suppliers</td></tr>':db.suppliers.map(s=>`<tr><td class="mono text-muted">${s.id}</td><td style="font-weight:500">${s.name}</td><td class="mono">${s.phone||'—'}</td><td class="mono">${s.phone_opt||'—'}</td><td>${s.email||'—'}</td><td style="max-width:200px">${s.address||'—'}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openSupplierModal('${s.id}')">Edit</button><button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="showSupplierProducts('${s.id}')">📦 View Products</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteSupplier('${s.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
+suppliers(){ 
+  return `
+    <div class="page-header"><h2>Suppliers</h2><button class="btn btn-primary" onclick="openSupplierModal()">+ New Supplier</button></div>
+    <div style="margin-bottom:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <div style="flex:1; min-width:200px">
+        <input type="text" id="supplierSearchInput" placeholder="🔍 Search by name or ID..." 
+               oninput="filterSuppliersTable()" 
+               style="width:100%; padding:8px 12px; border:1px solid var(--border2); border-radius:var(--radius); font-size:13.5px;">
+      </div>
+      <span class="text-muted" style="font-size:12px" id="supplierCount">${db.suppliers.length} suppliers</span>
+    </div>
+    <div class="card">
+      <table class="w-full" id="suppliersTable">
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Phone</th><th>Alt. Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="suppliersTableBody">
+          ${db.suppliers.map(s => `
+            <tr data-supplier-id="${s.id.toLowerCase()}" data-supplier-name="${s.name.toLowerCase()}">
+              <td class="mono text-muted">${s.id}</td>
+              <td style="font-weight:500">${s.name}</td>
+              <td class="mono">${s.phone||'—'}</td>
+              <td class="mono">${s.phone_opt||'—'}</td>
+              <td>${s.email||'—'}</td>
+              <td style="max-width:200px">${s.address||'—'}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="openSupplierModal('${s.id}')">Edit</button>
+                <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="showSupplierProducts('${s.id}')">📦 View Products</button>
+                <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteSupplier('${s.id}')">Delete</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+},
 categories(){ 
   return `<div class="page-header"><h2>Categories</h2><button class="btn btn-primary" onclick="openCategoryModal()">+ New Category</button></div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
@@ -741,7 +776,29 @@ categories(){
           </div>`).join('')}
     </div>`;
 },
-products(){ return `<div class="page-header"><h2>Products</h2></div><div class="card"><table><thead><tr><th>Product ID</th><th>Name</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Qty</th><th>Actions</th></tr></thead><tbody>${!db.products.length?'<tr class="empty-row"><td colspan="8">No products</td></tr>':db.products.map(p=>`<tr><td><span class="badge badge-blue mono">${p.id}</span></td><td><div style="font-weight:500">${p.name}</div><div class="text-muted" style="font-size:11.5px">${p.description||''}</div></td><td><span class="badge badge-blue">${catName(p.category_id)}</span></td><td class="text-muted">${p.unit}</td><td class="mono">${fmt$(p.purchase_price)}</td><td class="mono">${fmt$(p.selling_price)}</td><td>${p.stock_quantity<10?`<span class="badge badge-red">${p.stock_quantity} ⚠</span>`:`<span class="badge badge-green">${p.stock_quantity}</span>`}</td><td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openProductModal('${p.id}')">Edit</button><button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`; },
+products(){ 
+  return `
+    <div class="page-header"><h2>Products</h2></div>
+    <div style="margin-bottom:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <div style="flex:1; min-width:200px">
+        <input type="text" id="productSearchInput" placeholder="🔍 Search by Name or ID..." 
+               oninput="filterProducts()" 
+               style="width:100%; padding:8px 12px; border:1px solid var(--border2); border-radius:var(--radius); font-size:13.5px;">
+      </div>
+      <span class="text-muted" style="font-size:12px" id="productCount">${db.products.length} products</span>
+    </div>
+    <div class="card" id="productsTableContainer">
+      <table class="w-full" id="productsTable">
+        <thead>
+          <tr><th>Product ID</th><th>Name</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Qty</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="productsTableBody">
+          ${renderProductRows(db.products)}
+        </tbody>
+      </table>
+    </div>
+  `;
+},
 sup_products(){ 
   return `<div class="page-header"><h2>Supplier–Product Links</h2><button class="btn btn-primary" onclick="openSupProdModal()">+ Link Supplier to Product</button></div>
     <div class="card" style="overflow-x:auto">
@@ -790,8 +847,67 @@ purchases(){ return `<div class="page-header"><h2>Purchase Orders</h2><button cl
 sales(){ return `<div class="page-header"><h2>Sales</h2><button class="btn btn-success" onclick="openSaleModal()">+ New Sale (POS)</button></div><div class="card"><table><thead><tr><th>ID</th><th>Customer</th><th>Admin</th><th>Date</th><th>Subtotal</th><th>Discount</th><th>VAT</th><th>Total</th><th>Items</th></tr></thead><tbody>${!db.sales.length?'<tr class="empty-row"><td colspan="9">No sales yet</td></tr>':[...db.sales].reverse().map(s=>`<tr><td class="mono text-muted">${s.id}</td><td>${custName(s.customer_id)}</td><td class="text-muted">${admName(s.admin_id)}</td><td class="mono">${s.date}</td><td class="mono">${fmt$(s.subtotal)}</td><td class="text-muted">${s.discount_type==='percent'?s.discount_amount+'%':fmt$(s.discount_amount)}</td><td class="text-muted">${s.vat}%</td><td><span class="badge badge-green">${fmt$(s.total)}</span></td><td><button class="btn-link" onclick="viewSaleItems('${s.id}')">View</button></td></tr>`).join('')}</tbody></table></div>`; },
 inventory(){ const logs=[...db.inventory].reverse().slice(0,50); return `<div class="page-header"><h2>Inventory Log</h2></div><div class="card" style="margin-bottom:22px"><div class="card-header"><h3>Current Stock Levels (from Product table)</h3></div><table><thead><tr><th>Product</th><th>Description</th><th>Category</th><th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Quantity</th></tr></thead><tbody>${db.products.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td class="text-muted" style="font-size:12px">${p.description||'—'}</td><td><span class="badge badge-blue">${catName(p.category_id)}</span></td><td class="text-muted">${p.unit}</td><td class="mono">${fmt$(p.purchase_price)}</td><td class="mono">${fmt$(p.selling_price)}</td><td>${p.stock_quantity<10?`<span class="badge badge-red">${p.stock_quantity} ⚠</span>`:`<span class="badge badge-green">${p.stock_quantity}</span>`}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="card-header"><h3>Movement Log (Inventory table — last 50 entries)</h3></div><table><thead><tr><th>Log ID</th><th>Product</th><th>Quantity In</th><th>Quantity Out</th><th>Last Updated</th></tr></thead><tbody>${!logs.length?'<tr class="empty-row"><td colspan="5">No log entries yet</td></tr>':logs.map(l=>`<tr><td class="mono text-muted">${l.id}</td><td>${prodName(l.product_id)}</td><td>${l.quantity_in>0?`<span class="badge badge-green">+${l.quantity_in}</span>`:'—'}</td><td>${l.quantity_out>0?`<span class="badge badge-red">−${l.quantity_out}</span>`:'—'}</td><td class="mono">${l.last_updated}</td></tr>`).join('')}</tbody></table></div>`; }
 };
+function renderProductRows(products){
+  if(!products.length) {
+    return '<tr class="empty-row"><td colspan="8">No products found</td></tr>';
+  }
+  return products.map(p => `
+    <tr>
+      <td><span class="badge badge-blue mono">${p.id}</span></td>
+      <td>
+        <div style="font-weight:500">${p.name}</div>
+        <div class="text-muted" style="font-size:11.5px">${p.description||''}</div>
+      </td>
+      <td><span class="badge badge-blue">${catName(p.category_id)}</span></td>
+      <td class="text-muted">${p.unit}</td>
+      <td class="mono">${fmt$(p.purchase_price)}</td>
+      <td class="mono">${fmt$(p.selling_price)}</td>
+      <td>${p.stock_quantity<10 ? `<span class="badge badge-red">${p.stock_quantity} ⚠</span>` : `<span class="badge badge-green">${p.stock_quantity}</span>`}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="openProductModal('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteProduct('${p.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.filterProducts = function(){
+  const query = document.getElementById('productSearchInput')?.value?.toLowerCase() || '';
+  const filtered = db.products.filter(p => 
+    p.name.toLowerCase().includes(query) || 
+    p.id.toLowerCase().includes(query)
+  );
+  const tbody = document.getElementById('productsTableBody');
+  if(tbody) {
+    tbody.innerHTML = renderProductRows(filtered);
+  }
+  const countEl = document.getElementById('productCount');
+  if(countEl) {
+    countEl.textContent = `${filtered.length} of ${db.products.length} products`;
+  }
+};
+
+window.filterSuppliersTable = function(){
+  const input = document.getElementById('supplierSearchInput');
+  if(!input) return;
+  const query = input.value.toLowerCase().trim();
+  const rows = document.querySelectorAll('#suppliersTableBody tr');
+  let visibleCount = 0;
+  rows.forEach(row => {
+    const id = row.dataset.supplierId || '';
+    const name = row.dataset.supplierName || '';
+    const match = id.includes(query) || name.includes(query);
+    row.style.display = match ? '' : 'none';
+    if(match) visibleCount++;
+  });
+  const countEl = document.getElementById('supplierCount');
+  if(countEl) {
+    countEl.textContent = `${visibleCount} of ${db.suppliers.length} suppliers`;
+  }
+};
 
 function renderPage(page){ activePage = page; const pc = document.getElementById('pageContent'); pc.innerHTML = (pages[page] || pages.dashboard)(); document.querySelectorAll('.nav-link').forEach(l => { l.classList.toggle('active', l.dataset.page === page); }); }
+
 document.querySelectorAll('.nav-link').forEach(l => { l.addEventListener('click', e => { e.preventDefault(); renderPage(l.dataset.page); }); });
 renderPage('dashboard');
 loadAllData();
