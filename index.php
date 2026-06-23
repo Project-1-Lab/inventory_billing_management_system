@@ -723,7 +723,7 @@ suppliers(){
     <div class="page-header"><h2>Suppliers</h2><button class="btn btn-primary" onclick="openSupplierModal()">+ New Supplier</button></div>
     <div style="margin-bottom:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
       <div style="flex:1; min-width:200px">
-        <input type="text" id="supplierSearchInput" placeholder="🔍 Search by name or ID..." 
+        <input type="text" id="supplierSearchInput" placeholder="🔍 Search by Name or ID..." 
                oninput="filterSuppliersTable()" 
                style="width:100%; padding:8px 12px; border:1px solid var(--border2); border-radius:var(--radius); font-size:13.5px;">
       </div>
